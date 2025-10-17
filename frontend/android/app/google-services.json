@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "791686976623",
+    "project_id": "cooksy-24914",
+    "storage_bucket": "cooksy-24914.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:791686976623:android:814de0cbd6c54cad53699a",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgVp4SYKnFpvr0Vi6cTL1ZdGkTp95a7B4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

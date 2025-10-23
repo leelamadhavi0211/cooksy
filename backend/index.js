@@ -13,7 +13,6 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const app = express();
-const cors = require("cors");
 app.use(cors({
   origin: "https://cooksy-24914.web.app"  // your Firebase app URL
 }));

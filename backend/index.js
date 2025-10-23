@@ -12,7 +12,7 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const app = express();
-const port=3000
+const port=5000
 app.use(
   cors({
     origin: "https://cooksy-24914.web.app", // your Firebase app URL

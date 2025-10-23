@@ -12,7 +12,7 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const app = express();
-
+const port=3000
 app.use(
   cors({
     origin: "https://cooksy-24914.web.app", // your Firebase app URL
@@ -113,6 +113,6 @@ app.get("/recipes/:id", async (req, res) => {
   }
 });
 
-app.listen(5000, () =>
-  console.log("✅ Backend running on http://localhost:5000")
+app.listen(port, () =>
+  console.log(`Backend running on http://localhost:${port}`)
 );

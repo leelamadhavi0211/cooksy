@@ -10,39 +10,76 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-
 const db = admin.firestore();
 const app = express();
-app.use(cors({
-  origin: "https://cooksy-24914.web.app"  // your Firebase app URL
-}));
+
+app.use(
+  cors({
+    origin: "https://cooksy-24914.web.app", // your Firebase app URL
+  })
+);
 app.use(express.json());
 
+/**
+ * 🍱 Dynamic Recipes Route
+ * Supports:
+ *  /recipes               → Indian + Vegetarian
+ *  /recipes?q=Breakfast   → Breakfast only
+ *  /recipes?q=Seafood     → Seafood only
+ *  /recipes?q=Dessert     → Dessert only
+ *  /recipes?q=Vegetarian  → Vegetarian only
+ */
 app.get("/recipes", async (req, res) => {
+  const query = req.query.q?.toLowerCase();
+
   try {
-    // 1️⃣ Fetch Indian recipes
-    const indianRes = await axios.get(
-      "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
-    );
+    let apiUrl;
 
-    // 2️⃣ Fetch vegetarian recipes
-    const vegRes = await axios.get(
-      "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
-    );
+    if (!query || query === "all") {
+      // Default → Indian + Vegetarian
+      const indianRes = await axios.get(
+        "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
+      );
+      const vegRes = await axios.get(
+        "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
+      );
 
-    // 3️⃣ Combine lists (remove duplicates)
-    const combined = [...indianRes.data.meals, ...vegRes.data.meals].filter(
-      (v, i, a) => a.findIndex(t => t.idMeal === v.idMeal) === i
-    );
+      // Combine and remove duplicates
+      const combined = [...indianRes.data.meals, ...vegRes.data.meals].filter(
+        (v, i, a) => a.findIndex((t) => t.idMeal === v.idMeal) === i
+      );
+      return res.json(combined);
+    }
 
-    res.json(combined);
+    // Handle category-based filters
+    const validCategories = ["breakfast", "dessert", "seafood", "vegetarian"];
+
+    if (validCategories.includes(query)) {
+      apiUrl = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${query
+        .charAt(0)
+        .toUpperCase()}${query.slice(1)}`;
+    } else {
+      // fallback: search by meal name
+      apiUrl = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+    }
+
+    const response = await axios.get(apiUrl);
+    const meals = response.data.meals || [];
+
+    if (meals.length === 0) {
+      return res.status(404).json({ message: "No recipes found" });
+    }
+
+    res.json(meals);
   } catch (error) {
-    console.error(error.message);
+    console.error("Error fetching recipes:", error.message);
     res.status(500).json({ error: "Failed to fetch recipes" });
   }
 });
 
-
+/**
+ * 🍲 Fetch recipe details by ID
+ */
 app.get("/recipes/:id", async (req, res) => {
   const recipeId = req.params.id;
   const url = `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${recipeId}`;
@@ -56,7 +93,6 @@ app.get("/recipes/:id", async (req, res) => {
       return res.status(404).json({ error: "Recipe not found" });
     }
 
-    // Format details nicely
     const recipeDetails = {
       id: meal.idMeal,
       title: meal.strMeal,
@@ -77,5 +113,6 @@ app.get("/recipes/:id", async (req, res) => {
   }
 });
 
-
-app.listen(5000, () => console.log("✅ Backend running on http://localhost:5000"));
+app.listen(5000, () =>
+  console.log("✅ Backend running on http://localhost:5000")
+);

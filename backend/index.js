@@ -13,16 +13,9 @@ admin.initializeApp({
 const db = admin.firestore();
 const app = express();
 
-// ✅ Allow both Firebase Hosting + Localhost during development
-app.use(
-  cors({
-    origin: [
-      "https://cooksy-24914.web.app", // your deployed Firebase frontend
-      "http://localhost:3000",        // local dev frontend
-      "http://localhost:5000",        // optional for backend test
-    ],
-  })
-);
+
+// ✅ Allow all origins (for testing purposes)
+app.use(cors());
 app.use(express.json());
 
 /**

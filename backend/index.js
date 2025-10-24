@@ -12,31 +12,37 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const app = express();
-const port=5000
+
+// ✅ Allow both Firebase Hosting + Localhost during development
 app.use(
   cors({
-    origin: "https://cooksy-24914.web.app", // your Firebase app URL
+    origin: [
+      "https://cooksy-24914.web.app", // your deployed Firebase frontend
+      "http://localhost:3000",        // local dev frontend
+      "http://localhost:5000",        // optional for backend test
+    ],
   })
 );
 app.use(express.json());
 
 /**
- * 🍱 Dynamic Recipes Route
+ * 🍱 Fetch recipes dynamically
  * Supports:
- *  /recipes               → Indian + Vegetarian
- *  /recipes?q=Breakfast   → Breakfast only
- *  /recipes?q=Seafood     → Seafood only
- *  /recipes?q=Dessert     → Dessert only
- *  /recipes?q=Vegetarian  → Vegetarian only
+ *   /recipes               → Indian + Vegetarian
+ *   /recipes?q=Breakfast   → Breakfast
+ *   /recipes?q=Seafood     → Seafood
+ *   /recipes?q=Dessert     → Dessert
+ *   /recipes?q=Vegetarian  → Vegetarian
  */
 app.get("/recipes", async (req, res) => {
   const query = req.query.q?.toLowerCase();
+  console.log(`📦 Fetching recipes for query: ${query || "all"}`);
 
   try {
     let apiUrl;
 
+    // 🧡 Default: Combine Indian + Vegetarian
     if (!query || query === "all") {
-      // Default → Indian + Vegetarian
       const indianRes = await axios.get(
         "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
       );
@@ -44,35 +50,34 @@ app.get("/recipes", async (req, res) => {
         "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
       );
 
-      // Combine and remove duplicates
       const combined = [...indianRes.data.meals, ...vegRes.data.meals].filter(
         (v, i, a) => a.findIndex((t) => t.idMeal === v.idMeal) === i
       );
+
       return res.json(combined);
     }
 
-    // Handle category-based filters
+    // 🥗 Category-specific fetch
     const validCategories = ["breakfast", "dessert", "seafood", "vegetarian"];
-
     if (validCategories.includes(query)) {
-      apiUrl = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${query
-        .charAt(0)
-        .toUpperCase()}${query.slice(1)}`;
+      const formatted =
+        query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
+      apiUrl = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${formatted}`;
     } else {
-      // fallback: search by meal name
+      // 🕵️ Search fallback
       apiUrl = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
     }
 
     const response = await axios.get(apiUrl);
     const meals = response.data.meals || [];
 
-    if (meals.length === 0) {
+    if (!meals.length) {
       return res.status(404).json({ message: "No recipes found" });
     }
 
     res.json(meals);
   } catch (error) {
-    console.error("Error fetching recipes:", error.message);
+    console.error("❌ Error fetching recipes:", error.message);
     res.status(500).json({ error: "Failed to fetch recipes" });
   }
 });
@@ -83,9 +88,9 @@ app.get("/recipes", async (req, res) => {
 app.get("/recipes/:id", async (req, res) => {
   const recipeId = req.params.id;
   const url = `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${recipeId}`;
+  console.log(`🔍 Fetching recipe by ID: ${recipeId}`);
 
   try {
-    console.log(`Fetching recipe by ID: ${recipeId}`);
     const response = await axios.get(url);
     const meal = response.data.meals ? response.data.meals[0] : null;
 
@@ -108,11 +113,13 @@ app.get("/recipes/:id", async (req, res) => {
 
     res.json(recipeDetails);
   } catch (error) {
-    console.error("Error fetching recipe details:", error.message);
+    console.error("❌ Error fetching recipe details:", error.message);
     res.status(500).json({ error: "Failed to fetch recipe details" });
   }
 });
 
-app.listen(port, () =>
-  console.log(`Backend running on http://localhost:${port}`)
+// ✅ For Render (uses PORT env variable)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(`✅ Backend running on port ${PORT}`)
 );

@@ -10,45 +10,90 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-
 const db = admin.firestore();
 const app = express();
+/*
+// ✅ Allow both Firebase Hosting + Localhost during development
+app.use(
+  cors({
+    origin: [
+      "https://cooksy-24914.web.app", // your deployed Firebase frontend
+      "http://localhost:3000",        // local dev frontend
+      "http://localhost:5000",        // optional for backend test
+    ],
+  })
+);*/
+
+// ✅ Allow all origins (for testing purposes)
 app.use(cors());
 app.use(express.json());
 
+/**
+ * 🍱 Fetch recipes dynamically
+ * Supports:
+ *   /recipes               → Indian + Vegetarian
+ *   /recipes?q=Breakfast   → Breakfast
+ *   /recipes?q=Seafood     → Seafood
+ *   /recipes?q=Dessert     → Dessert
+ *   /recipes?q=Vegetarian  → Vegetarian
+ */
 app.get("/recipes", async (req, res) => {
+  const query = req.query.q?.toLowerCase();
+  console.log(`📦 Fetching recipes for query: ${query || "all"}`);
+
   try {
-    // 1️⃣ Fetch Indian recipes
-    const indianRes = await axios.get(
-      "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
-    );
+    let apiUrl;
 
-    // 2️⃣ Fetch vegetarian recipes
-    const vegRes = await axios.get(
-      "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
-    );
+    // 🧡 Default: Combine Indian + Vegetarian
+    if (!query || query === "all") {
+      const indianRes = await axios.get(
+        "https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian"
+      );
+      const vegRes = await axios.get(
+        "https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian"
+      );
 
-    // 3️⃣ Combine lists (remove duplicates)
-    const combined = [...indianRes.data.meals, ...vegRes.data.meals].filter(
-      (v, i, a) => a.findIndex(t => t.idMeal === v.idMeal) === i
-    );
+      const combined = [...indianRes.data.meals, ...vegRes.data.meals].filter(
+        (v, i, a) => a.findIndex((t) => t.idMeal === v.idMeal) === i
+      );
 
-    res.json(combined);
+      return res.json(combined);
+    }
+
+    // 🥗 Category-specific fetch
+    const validCategories = ["breakfast", "dessert", "seafood", "vegetarian"];
+    if (validCategories.includes(query)) {
+      const formatted =
+        query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
+      apiUrl = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${formatted}`;
+    } else {
+      // 🕵️ Search fallback
+      apiUrl = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+    }
+
+    const response = await axios.get(apiUrl);
+    const meals = response.data.meals || [];
+
+    if (!meals.length) {
+      return res.status(404).json({ message: "No recipes found" });
+    }
+
+    res.json(meals);
   } catch (error) {
-    console.error(error.message);
+    console.error("❌ Error fetching recipes:", error.message);
     res.status(500).json({ error: "Failed to fetch recipes" });
   }
 });
 
-/* ============================
-   ✅ 2. GET recipe details by ID
-============================ */
+/**
+ * 🍲 Fetch recipe details by ID
+ */
 app.get("/recipes/:id", async (req, res) => {
   const recipeId = req.params.id;
   const url = `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${recipeId}`;
+  console.log(`🔍 Fetching recipe by ID: ${recipeId}`);
 
   try {
-    console.log(`Fetching recipe by ID: ${recipeId}`);
     const response = await axios.get(url);
     const meal = response.data.meals ? response.data.meals[0] : null;
 
@@ -56,7 +101,6 @@ app.get("/recipes/:id", async (req, res) => {
       return res.status(404).json({ error: "Recipe not found" });
     }
 
-    // Format details nicely
     const recipeDetails = {
       id: meal.idMeal,
       title: meal.strMeal,
@@ -72,12 +116,13 @@ app.get("/recipes/:id", async (req, res) => {
 
     res.json(recipeDetails);
   } catch (error) {
-    console.error("Error fetching recipe details:", error.message);
+    console.error("❌ Error fetching recipe details:", error.message);
     res.status(500).json({ error: "Failed to fetch recipe details" });
   }
 });
 
-/* ============================
-   ✅ Start Server
-============================ */
-app.listen(5000, () => console.log("✅ Backend running on http://localhost:5000"));
+// ✅ For Render (uses PORT env variable)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(`✅ Backend running on port ${PORT}`)
+);

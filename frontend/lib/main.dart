@@ -1,47 +1,13 @@
-/*import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart' as signup;
-import 'home_screen.dart' as home;
-import 'recipe_detail_screen.dart';
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cooksy Web',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.orange),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => LoginScreen(),
-        '/signup': (context) => signup.SignupScreen(),
-        '/home': (context) => home.HomeScreen(),
-        '/recipeDetail': (context) {
-        final recipeId =
-            ModalRoute.of(context)!.settings.arguments as int;
-        return RecipeDetailScreen(recipeId: recipeId);
-      },
-      },
-    );
-  }
-}*/
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'dashboard_screen.dart';
+import 'explore_preview_screen.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart' as signup;
-import 'home_screen.dart' as home;
 import 'recipe_detail_screen.dart';
+import 'edit_profile_screen.dart';
+import 'auth_guard.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +15,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -60,16 +26,32 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Cooksy Web',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.orange),
-      initialRoute: '/login',
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: const Color(0xfffffaf5),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontFamily: 'Poppins'),
+        ),
+      ),
+      initialRoute: '/',
       routes: {
+        '/': (context) => const DashboardScreen(),
+        '/explorePreview': (context) => const ExplorePreviewScreen(),
         '/login': (context) => LoginScreen(),
         '/signup': (context) => signup.SignupScreen(),
-        '/home': (context) => home.HomeScreen(),
+
+        // 🔒 Protected Routes — accessible only after login
+        '/home': (context) => const AuthGuard(routeName: '/home'),
+        '/profile': (context) => const AuthGuard(routeName: '/profile'),
+        '/myRecipes': (context) => const AuthGuard(routeName: '/myRecipes'),
+        '/addRecipe': (context) => const AuthGuard(routeName: '/addRecipe'),
+        '/savedRecipes': (context) => const AuthGuard(routeName: '/savedRecipes'),
+
+        // Public
+        '/editProfile': (context) => const EditProfileScreen(),
+
         '/recipeDetail': (context) {
-          // ✅ Retrieve recipeId as String from arguments
-          final recipeId =
-              ModalRoute.of(context)!.settings.arguments.toString();
+          final recipeId = ModalRoute.of(context)!.settings.arguments.toString();
           return RecipeDetailScreen(recipeId: recipeId);
         },
       },

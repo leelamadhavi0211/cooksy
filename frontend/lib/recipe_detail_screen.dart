@@ -1,92 +1,3 @@
-/*import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-class RecipeDetailScreen extends StatefulWidget {
-  final int recipeId;
-  const RecipeDetailScreen({super.key, required this.recipeId});
-
-  @override
-  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
-}
-
-class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  Map<String, dynamic>? recipe;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchRecipeDetail();
-  }
-
-  Future<void> fetchRecipeDetail() async {
-    try {
-      final url = Uri.parse(
-          "http://10.124.153.137:5000/recipes/${widget.recipeId}"); // Backend should support this endpoint
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          recipe = json.decode(response.body);
-          isLoading = false;
-        });
-      } else {
-        print("Failed to load recipe detail: ${response.statusCode}");
-        setState(() => isLoading = false);
-      }
-    } catch (e) {
-      print("Error fetching recipe detail: $e");
-      setState(() => isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(recipe?['title'] ?? 'Recipe Detail')),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : recipe == null
-              ? const Center(child: Text("Recipe not found"))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      recipe!['image'] != null
-                          ? Image.network(
-                              "http://10.124.153.137:5000/proxy-image?url=${Uri.encodeComponent(recipe!['image'])}",
-                              fit: BoxFit.cover,
-                            )
-                          : const SizedBox(),
-                      const SizedBox(height: 16),
-                      Text(
-                        recipe!['title'] ?? '',
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Ready in: ${recipe!['readyInMinutes'] ?? 'N/A'} minutes",
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Servings: ${recipe!['servings'] ?? 'N/A'}",
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        recipe!['instructions'] ?? 'No instructions available',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
-    );
-  }
-}*/
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -104,6 +15,7 @@ class RecipeDetailScreen extends StatefulWidget {
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Map recipe = {};
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -112,23 +24,46 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> fetchRecipeDetails(String id) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
     try {
-      final url = Uri.parse("http://10.124.153.137:5000/recipes/$id");
+      // ✅ Use HTTPS backend
+      final url =
+          Uri.parse("https://cooksy-backend-z82c.onrender.com/recipes/$id");
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        if (data == null || data.isEmpty) {
+          setState(() {
+            recipe = {};
+            errorMessage = "Recipe not found.";
+            isLoading = false;
+          });
+          return;
+        }
+
         setState(() {
           recipe = data;
           isLoading = false;
         });
       } else {
-        print("Failed to load recipe: ${response.statusCode}");
-        setState(() => isLoading = false);
+        setState(() {
+          recipe = {};
+          errorMessage = "Failed to load recipe: ${response.statusCode}";
+          isLoading = false;
+        });
       }
     } catch (e) {
-      print("Error fetching recipe: $e");
-      setState(() => isLoading = false);
+      setState(() {
+        recipe = {};
+        errorMessage = "Error fetching recipe: $e";
+        isLoading = false;
+      });
     }
   }
 
@@ -140,29 +75,42 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : recipe.isEmpty
-              ? const Center(child: Text("Recipe not found."))
+          : errorMessage != null
+              ? Center(child: Text(errorMessage!))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ✅ Image with proper aspect ratio
+                      // Image
                       if (recipe['image'] != null)
                         SizedBox(
                           width: double.infinity,
                           height: 250,
                           child: Image.network(
                             recipe['image'],
-                            fit: BoxFit.contain, // entire image visible
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return Center(
+                                  child: CircularProgressIndicator(
+                                value: progress.expectedTotalBytes != null
+                                    ? progress.cumulativeBytesLoaded /
+                                        progress.expectedTotalBytes!
+                                    : null,
+                              ));
+                            },
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.image_not_supported, size: 50);
+                              return const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                              );
                             },
                           ),
                         ),
                       const SizedBox(height: 16),
 
-                      // ✅ Recipe Title
+                      // Title
                       Text(
                         recipe['title'] ?? '',
                         style: const TextStyle(
@@ -170,7 +118,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ✅ Ingredients
+                      // Ingredients
                       if (recipe['ingredients'] != null &&
                           recipe['ingredients'] is List)
                         Column(
@@ -178,7 +126,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           children: [
                             const Text("Ingredients",
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w600)),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600)),
                             const SizedBox(height: 8),
                             ...List.generate(
                               recipe['ingredients'].length,
@@ -190,30 +139,38 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ],
                         ),
                       const SizedBox(height: 16),
-                       // ✅ Watch Video Button
-    if (recipe['youtube'] != null && recipe['youtube'] != "")
-      TextButton.icon(
-        onPressed: () async {
-          final url = Uri.parse(recipe['youtube']);
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not open video')),
-            );
-          }
-        },
-        icon: const Icon(Icons.video_library),
-        label: const Text("Watch Video"),
-      ),
-                      // ✅ Instructions
+
+                      // YouTube Video
+                      if (recipe['youtube'] != null &&
+                          recipe['youtube'] != "")
+                        TextButton.icon(
+                          onPressed: () async {
+                            final url = Uri.parse(recipe['youtube']);
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url,
+                                  mode: LaunchMode.externalApplication);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Could not open video')),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.video_library),
+                          label: const Text("Watch Video"),
+                        ),
+
+                      const SizedBox(height: 16),
+
+                      // Instructions
                       if (recipe['instructions'] != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text("Instructions",
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w600)),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600)),
                             const SizedBox(height: 8),
                             Text(
                               recipe['instructions'],
@@ -221,7 +178,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ),
                           ],
                         ),
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

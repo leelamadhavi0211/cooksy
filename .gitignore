@@ -19,7 +19,7 @@ dist/
 .gradle/
 .idea/
 # Secrets
-backend/serviceAccountKey.json
+#backend/serviceAccountKey.json
 
 # Flutter / build files
 frontend/build/

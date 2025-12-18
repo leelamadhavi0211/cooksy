@@ -13,6 +13,13 @@
 migrate_working_dir/
 backend/serviceAccountKey.json
 
+node_modules/
+build/
+dist/
+.gradle/
+.idea/
+
+
 # IntelliJ related
 *.iml
 *.ipr

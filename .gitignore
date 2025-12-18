@@ -18,6 +18,11 @@ build/
 dist/
 .gradle/
 .idea/
+# Secrets
+backend/serviceAccountKey.json
+
+# Flutter / build files
+frontend/build/
 
 
 # IntelliJ related

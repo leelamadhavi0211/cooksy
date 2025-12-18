@@ -12,6 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 backend/serviceAccountKey.json
+frontend/lib/firebase_options.dart
 
 node_modules/
 build/

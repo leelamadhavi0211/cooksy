@@ -253,9 +253,6 @@ https://cooksy-backend-z82c.onrender.com
 * Render
 
 ---
-Great! For your project documentation, you can use the following **Screens Description** section.
-
----
 
 # 8. Screens
 

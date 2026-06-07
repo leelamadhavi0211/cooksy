@@ -1,4 +1,4 @@
-# 🍽️ Cooksy – Recipe Sharing Web Application
+#  Cooksy – Recipe Sharing Web Application
 
 ## Introduction
 
@@ -60,7 +60,7 @@ Responsibilities:
 
 ### Backend URL
 
-https://cooksy-backend-z82c.onrender.com
+[https://cooksy-backend-z82c.onrender.com]
 
 ### Main API Endpoints
 
@@ -92,19 +92,19 @@ Cooksy uses **TheMealDB API** as its primary recipe data source.
 
 #### Fetch Recipes by Category
 
-https://www.themealdb.com/api/json/v1/1/filter.php?c=Category
+[https://www.themealdb.com/api/json/v1/1/filter.php?c=Category]
 
 #### Fetch Recipes by Area
 
-https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian
+[https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian]
 
 #### Search Recipes
 
-https://www.themealdb.com/api/json/v1/1/search.php?s=RecipeName
+[https://www.themealdb.com/api/json/v1/1/search.php?s=RecipeName]
 
 #### Fetch Recipe Details
 
-https://www.themealdb.com/api/json/v1/1/lookup.php?i=RecipeID
+[https://www.themealdb.com/api/json/v1/1/lookup.php?i=RecipeID]
 
 The backend communicates with TheMealDB API and forwards the processed data to the Flutter frontend.
 
@@ -211,7 +211,7 @@ Firebase Hosting
 
 Website:
 
-https://cooksy-a02c5.web.app
+[https://cooksy-24914.web.app/]
 
 ### Backend Hosting
 
@@ -219,7 +219,7 @@ Render
 
 Backend API:
 
-https://cooksy-backend-z82c.onrender.com
+[https://cooksy-backend-z82c.onrender.com]
 
 ---
 
